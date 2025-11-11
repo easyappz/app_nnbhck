@@ -11,8 +11,6 @@ paths:
       tags:
       - api
       security:
-      - cookieAuth: []
-      - basicAuth: []
       - {}
       responses:
         '200':
@@ -21,6 +19,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/Message'
           description: ''
+  /api/auth/register/:
+    post:
+      operationId: api_auth_register_create
+      description: Register a new user
+      tags:
+      - auth
+      security:
+      - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithProfile'
+  /api/auth/token/:
+    post:
+      operationId: api_auth_token_obtain
+      description: Obtain JWT pair by email and password
+      tags:
+      - auth
+      security:
+      - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainByEmailRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+  /api/auth/token/refresh/:
+    post:
+      operationId: api_auth_token_refresh
+      description: Refresh access token
+      tags:
+      - auth
+      security:
+      - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenAccess'
 components:
   schemas:
     Message:
@@ -36,11 +97,102 @@ components:
       required:
       - message
       - timestamp
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        birth_date:
+          type: string
+          format: date
+        about:
+          type: string
+      required:
+      - email
+      - password
+    Profile:
+      type: object
+      properties:
+        phone:
+          type: string
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        about:
+          type: string
+      required:
+      - phone
+      - about
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+      required:
+      - id
+      - email
+    UserWithProfile:
+      allOf:
+      - $ref: '#/components/schemas/UserPublic'
+      - type: object
+        properties:
+          profile:
+            $ref: '#/components/schemas/Profile'
+    TokenObtainByEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+      - email
+      - password
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+      required:
+      - refresh
+    TokenAccess:
+      type: object
+      properties:
+        access:
+          type: string
+      required:
+      - access
   securitySchemes:
-    basicAuth:
+    bearerAuth:
       type: http
-      scheme: basic
-    cookieAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
+      scheme: bearer
+      bearerFormat: JWT
