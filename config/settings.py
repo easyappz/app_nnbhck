@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,11 +33,17 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
-# CORS settings (если нужно разрешить кросс-доменные запросы)
-CORS_ALLOW_ALL_ORIGINS = True  # Только для разработки!
+# CORS settings (только для разработки)
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ["https://*.easyappz.ru/", "http://localhost:8080", "https://easyappz.ru/"]
+# Разрешаем доверенный источник для CSRF (фронтенд React на локали)
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "https://*.easyappz.ru/",
+    "http://localhost:8080",
+    "https://easyappz.ru/",
+]
 
 # Allow all hosts in Docker (restrict with nginx/load balancer)
 ALLOWED_HOSTS = ["*"]
@@ -63,6 +70,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third party
     "rest_framework",
+    "corsheaders",
     "drf_spectacular",
     # Local
     "api",
@@ -71,17 +79,23 @@ INSTALLED_APPS = [
 # REST Framework configuration
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.AllowAny",
+    ),
 }
 
-# drf-spectacular configuration
-SPECTACULAR_SETTINGS = {
-    "TITLE": "Easyapp API",
-    "DESCRIPTION": "API documentation for easyapp",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
+# Simple JWT configuration
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -144,7 +158,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
 
