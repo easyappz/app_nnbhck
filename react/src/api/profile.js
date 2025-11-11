@@ -5,8 +5,9 @@ export const getMe = async () => {
   return res.data; // UserWithProfile
 };
 
-export const updateMe = async (payload) => {
-  const res = await instance.patch('/api/profile/me/', payload);
+export const updateMe = async (payload, method = 'patch') => {
+  const httpMethod = method.toLowerCase() === 'put' ? 'put' : 'patch';
+  const res = await instance[httpMethod]('/api/profile/me/', payload);
   return res.data; // UserWithProfile
 };
 
