@@ -82,6 +82,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenAccess'
+  /api/profile/me/:
+    get:
+      operationId: api_profile_me_retrieve
+      description: Get current user's profile
+      tags:
+      - profile
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithProfile'
+    put:
+      operationId: api_profile_me_update
+      description: Update current user's profile (full update)
+      tags:
+      - profile
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileMeUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithProfile'
+    patch:
+      operationId: api_profile_me_partial_update
+      description: Partially update current user's profile
+      tags:
+      - profile
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileMeUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithProfile'
 components:
   schemas:
     Message:
@@ -156,6 +211,26 @@ components:
         properties:
           profile:
             $ref: '#/components/schemas/Profile'
+    ProfileUpdate:
+      type: object
+      properties:
+        phone:
+          type: string
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        about:
+          type: string
+    ProfileMeUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        profile:
+          $ref: '#/components/schemas/ProfileUpdate'
     TokenObtainByEmailRequest:
       type: object
       properties:

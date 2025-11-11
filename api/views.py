@@ -1,6 +1,6 @@
 from django.utils import timezone
 from django.contrib.auth.models import User
-from rest_framework import status
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 
-from .serializers import MessageSerializer, RegistrationSerializer
+from .serializers import MessageSerializer, RegistrationSerializer, ProfileMeSerializer
 
 
 class HelloView(APIView):
@@ -74,3 +74,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class ProfileMeView(generics.RetrieveUpdateAPIView):
+    """
+    Retrieve and update the current authenticated user's profile data.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ProfileMeSerializer
+
+    def get_object(self):
+        return self.request.user

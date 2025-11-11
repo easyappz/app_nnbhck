@@ -74,3 +74,42 @@ class RegistrationSerializer(serializers.Serializer):
 class MessageSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=200)
     timestamp = serializers.DateTimeField(read_only=True)
+
+
+class ProfileMeSerializer(serializers.ModelSerializer):
+    """
+    Serializer for reading/updating current user's public data and related profile.
+    Allows updates for: first_name, last_name, and profile fields phone, birth_date, about.
+    """
+
+    profile = ProfileSerializer(required=False)
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "first_name", "last_name", "profile"]
+        read_only_fields = ["id", "email"]
+
+    def update(self, instance: User, validated_data):
+        profile_data = validated_data.pop("profile", None)
+
+        # Update user fields (PATCH-safe)
+        if "first_name" in validated_data:
+            instance.first_name = validated_data.get("first_name", instance.first_name)
+        if "last_name" in validated_data:
+            instance.last_name = validated_data.get("last_name", instance.last_name)
+        instance.save()
+
+        # Ensure profile exists
+        profile, _ = Profile.objects.get_or_create(user=instance)
+
+        # Update profile fields if provided (PATCH-safe)
+        if isinstance(profile_data, dict):
+            if "phone" in profile_data:
+                profile.phone = profile_data.get("phone") or ""
+            if "birth_date" in profile_data:
+                profile.birth_date = profile_data.get("birth_date")
+            if "about" in profile_data:
+                profile.about = profile_data.get("about") or ""
+            profile.save()
+
+        return instance
