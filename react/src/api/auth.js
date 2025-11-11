@@ -1,22 +1,17 @@
 import instance from './axios';
-import './interceptors';
 
-export async function login({ email, password }) {
-  const res = await instance.post('/auth/token/', { email, password });
-  const { access, refresh } = res?.data || {};
-  if (access) localStorage.setItem('token', access);
-  if (refresh) localStorage.setItem('refreshToken', refresh);
-  return res.data;
-}
+// POST /api/auth/token/
+export const obtainToken = (email, password) => {
+  return instance.post('/api/auth/token/', { email, password });
+};
 
-export async function refresh(refreshToken) {
-  const res = await instance.post('/auth/token/refresh/', { refresh: refreshToken });
-  const { access } = res?.data || {};
-  if (access) localStorage.setItem('token', access);
-  return res.data;
-}
+// POST /api/auth/token/refresh/
+export const refreshToken = (refresh) => {
+  return instance.post('/api/auth/token/refresh/', { refresh });
+};
 
-export async function register(payload) {
-  const res = await instance.post('/auth/register/', payload);
-  return res.data;
-}
+// POST /api/auth/register/
+export const register = (data) => {
+  // data: { email, password, first_name?, last_name?, phone?, birth_date?, about? }
+  return instance.post('/api/auth/register/', data);
+};

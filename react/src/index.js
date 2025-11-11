@@ -9,6 +9,7 @@ import ru_RU from 'antd/locale/ru_RU';
 import { BrowserRouter } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ru';
+import { AuthProvider } from './context/AuthContext';
 
 // Set Dayjs locale to Russian
 dayjs.locale('ru');
@@ -18,11 +19,22 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <ConfigProvider locale={ru_RU}>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </ConfigProvider>
     </BrowserRouter>
   </React.StrictMode>
 );
+
+// Debug routes exposure for external tools
+try {
+  if (typeof window.handleRoutes === 'function') {
+    window.handleRoutes(['/', '/profile']);
+  }
+} catch (e) {
+  // no-op
+}
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
