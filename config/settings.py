@@ -73,7 +73,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     # Local
-    "api",
+    "api.apps.ApiConfig",
 ]
 
 # REST Framework configuration
