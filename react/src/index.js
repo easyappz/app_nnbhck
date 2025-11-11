@@ -30,7 +30,7 @@ root.render(
 // Debug routes exposure for external tools
 try {
   if (typeof window.handleRoutes === 'function') {
-    window.handleRoutes(['/', '/profile']);
+    window.handleRoutes(['/', '/profile', '/login', '/register']);
   }
 } catch (e) {
   // no-op

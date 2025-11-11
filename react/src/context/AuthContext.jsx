@@ -1,158 +1,95 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { obtainToken, refreshToken as refreshTokenApi, register as registerApi } from '../api/auth';
-import { getMe } from '../api/profile';
+import { message } from 'antd';
+import * as authApi from '../api/auth';
+import * as profileApi from '../api/profile';
 
 const AuthContext = createContext({
+  user: null,
   accessToken: null,
   refreshToken: null,
-  user: null,
-  loading: true,
-  login: async (_email, _password) => {},
-  register: async (_data) => {},
+  login: async () => {},
+  register: async () => {},
   logout: () => {},
-  setUser: (_user) => {},
 });
 
 export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [initTried, setInitTried] = useState(false);
 
-  const saveTokens = useCallback((access, refresh) => {
-    // axios instance expects token under key 'token'
+  const setTokens = useCallback((access, refresh) => {
+    setAccessToken(access || null);
     if (access) {
       localStorage.setItem('token', access);
-      setAccessToken(access);
-    }
-    if (refresh) {
-      localStorage.setItem('refreshToken', refresh);
-      setRefreshToken(refresh);
-    }
-  }, []);
-
-  const clearTokens = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    setAccessToken(null);
-    setRefreshToken(null);
-  }, []);
-
-  const fetchProfile = useCallback(async () => {
-    const { data } = await getMe();
-    setUser(data);
-    return data;
-  }, []);
-
-  const tryRefresh = useCallback(async () => {
-    const storedRefresh = localStorage.getItem('refreshToken');
-    if (!storedRefresh) return false;
-    try {
-      const { data } = await refreshTokenApi(storedRefresh);
-      if (data?.access) {
-        saveTokens(data.access, storedRefresh);
-        return true;
-      }
-      return false;
-    } catch (_e) {
-      return false;
-    }
-  }, [saveTokens]);
-
-  const login = useCallback(async (email, password) => {
-    setLoading(true);
-    try {
-      const { data } = await obtainToken(email, password);
-      saveTokens(data.access, data.refresh);
-      await fetchProfile();
-      return true;
-    } catch (error) {
-      clearTokens();
-      setUser(null);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchProfile, saveTokens, clearTokens]);
-
-  const register = useCallback(async (formData) => {
-    // formData should include email and password according to spec
-    setLoading(true);
-    try {
-      await registerApi(formData);
-      await login(formData.email, formData.password);
-      return true;
-    } catch (error) {
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [login]);
-
-  const logout = useCallback(() => {
-    clearTokens();
-    setUser(null);
-    setLoading(false);
-  }, [clearTokens]);
-
-  const loadFromStorage = useCallback(async () => {
-    setLoading(true);
-    const storedAccess = localStorage.getItem('token');
-    const storedRefresh = localStorage.getItem('refreshToken');
-
-    if (!storedAccess && !storedRefresh) {
-      setLoading(false);
-      return;
+    } else {
+      localStorage.removeItem('token');
     }
 
-    if (storedAccess) {
-      setAccessToken(storedAccess);
-    }
-    if (storedRefresh) {
-      setRefreshToken(storedRefresh);
-    }
-
-    try {
-      await fetchProfile();
-    } catch (e) {
-      // try refresh once if profile fetch fails
-      const refreshed = await tryRefresh();
-      if (refreshed) {
-        try {
-          await fetchProfile();
-        } catch (_e) {
-          logout();
-        }
+    if (typeof refresh !== 'undefined') {
+      setRefreshToken(refresh || null);
+      if (refresh) {
+        localStorage.setItem('refreshToken', refresh);
       } else {
-        logout();
+        localStorage.removeItem('refreshToken');
       }
-    } finally {
-      setLoading(false);
     }
-  }, [fetchProfile, tryRefresh, logout]);
+  }, []);
+
+  const fetchMe = useCallback(async () => {
+    try {
+      const data = await profileApi.getMe();
+      setUser(data);
+    } catch (e) {
+      console.error('Failed to fetch profile', e);
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
-    loadFromStorage();
-  }, [loadFromStorage]);
+    const storedAccess = localStorage.getItem('token');
+    const storedRefresh = localStorage.getItem('refreshToken');
+    if (storedAccess) {
+      setTokens(storedAccess, storedRefresh || null);
+      fetchMe().finally(() => setInitTried(true));
+    } else {
+      setInitTried(true);
+    }
+  }, [fetchMe, setTokens]);
+
+  const login = useCallback(async (email, password) => {
+    const tokens = await authApi.login(email, password);
+    setTokens(tokens.access, tokens.refresh);
+    await fetchMe();
+    message.success('Вы успешно вошли');
+  }, [fetchMe, setTokens]);
+
+  const register = useCallback(async (payload) => {
+    await authApi.register(payload);
+    // After register, perform login using provided credentials
+    const tokens = await authApi.login(payload.email, payload.password);
+    setTokens(tokens.access, tokens.refresh);
+    await fetchMe();
+    message.success('Регистрация прошла успешно');
+  }, [fetchMe, setTokens]);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setTokens(null, null);
+    message.info('Вы вышли из аккаунта');
+  }, [setTokens]);
 
   const value = useMemo(() => ({
+    user,
     accessToken,
     refreshToken,
-    user,
-    loading,
     login,
-    logout,
     register,
-    setUser,
-  }), [accessToken, refreshToken, user, loading, login, logout, register]);
+    logout,
+    initTried,
+  }), [user, accessToken, refreshToken, login, register, logout, initTried]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);
-
-export default AuthContext;

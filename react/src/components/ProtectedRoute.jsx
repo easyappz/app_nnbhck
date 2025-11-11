@@ -1,23 +1,24 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Spin } from 'antd';
 import { useAuth } from '../context/AuthContext';
+import { Spin } from 'antd';
 
 const ProtectedRoute = ({ children }) => {
-  const { accessToken, user, loading } = useAuth();
+  const { user, accessToken, initTried } = useAuth();
   const location = useLocation();
-  const isAuthenticated = Boolean(accessToken || user);
 
-  if (loading) {
+  const isAuth = Boolean(user || accessToken);
+
+  if (!initTried) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }} data-easytag="id1-src/components/ProtectedRoute.jsx">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '40vh' }} data-easytag="id1-src/components/ProtectedRoute.jsx">
         <Spin size="large" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!isAuth) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return children;
