@@ -10,6 +10,7 @@ import { BrowserRouter } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ru';
 import { AuthProvider } from './context/AuthContext';
+import './api/interceptors';
 
 // Set Dayjs locale to Russian
 dayjs.locale('ru');

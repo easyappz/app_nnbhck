@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, message } from 'antd';
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 import './App.css';
@@ -28,6 +28,7 @@ function App() {
 
   const handleLogout = () => {
     logout();
+    message.success('Вы вышли из аккаунта');
     navigate('/');
   };
 
